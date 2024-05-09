@@ -1,0 +1,28 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Define o vetor de tempo
+t = np.linspace(0, 30, 2000)
+
+# Define o sinal de banda base (por exemplo, dados)
+dados = (np.random.rand(10) > 0.5)  # Gera dados binários aleatórios (0s e 1s)
+sequencia_dados = np.repeat(dados, 200)  # Repete cada bit de dados 200 vezes para coincidir com o vetor de tempo
+
+# Define os níveis de amplitude para o 4-PAM
+niveis = [-3, -1, 1, 3]  # Níveis de amplitude para o 4-PAM, correspondendo aos símbolos 00, 01, 10 e 11
+
+# Converte os dados binários em símbolos PAM correspondentes
+simbolos_pam = np.zeros_like(sequencia_dados, dtype=float)  # Inicializa o array para os símbolos PAM
+for i in range(len(sequencia_dados)):
+    if sequencia_dados[i] == 0:  # Para o bit '0', define para o primeiro nível de PAM
+        simbolos_pam[i] = niveis[0]
+    else:  # Para o bit '1', define para o último nível de PAM
+        simbolos_pam[i] = niveis[-1]
+
+# Plota o sinal 4-PAM
+plt.plot(t, simbolos_pam)
+plt.xlabel('Tempo')
+plt.ylabel('Amplitude')
+plt.title('Sinal 4-PAM')
+plt.grid(True)
+plt.show()
