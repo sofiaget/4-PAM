@@ -1,0 +1,91 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+def criar_sinal_4pam(sequencia_dados, taxa_simbolos, fator_oversampling, amplitude):
+    """
+    Cria um sinal 4-PAM (Modulação de Amplitude de Pulso de 4 Níveis).
+
+    Parâmetros:
+    - sequencia_dados: Sequência binária de entrada (0s e 1s)
+    - taxa_simbolos: Taxa de símbolos (em símbolos por segundo)
+    - fator_oversampling: Fator de oversampling para a geração do sinal
+    - amplitude: Amplitude do sinal
+
+    Retorna:
+    - t: Array de tempo para o sinal
+    - sinal: Sinal 4-PAM
+    """
+    t = np.arange(0, len(sequencia_dados) / taxa_simbolos, 1 / (taxa_simbolos * fator_oversampling))
+    simbolos_pam = 2 * sequencia_dados - 1  # Mapeia dados binários para símbolos PAM (-1 e 1)
+    sinal = np.zeros(len(t))
+
+    for i, simbolo in enumerate(simbolos_pam):
+        sinal[i * fator_oversampling: (i + 1) * fator_oversampling] = simbolo * amplitude
+
+    return t, sinal
+
+def demodular_sinal_4pam(sinal_recebido, taxa_simbolos, fator_oversampling, limiar):
+    """
+    Demodula um sinal 4-PAM que passou por um canal ruidoso.
+
+    Parâmetros:
+    - sinal_recebido: Sinal recebido após passar por um canal ruidoso
+    - taxa_simbolos: Taxa de símbolos (em símbolos por segundo)
+    - fator_oversampling: Fator de oversampling para a geração do sinal
+    - limiar: Limiar para a demodulação (limiar de decisão)
+
+    Retorna:
+    - dados_demodulados: Sequência de dados binários demodulada
+    """
+    num_simbolos = int(len(sinal_recebido) / fator_oversampling)
+    dados_demodulados = np.zeros(num_simbolos)
+
+    for i in range(num_simbolos):
+        inicio_simbolo = i * fator_oversampling
+        fim_simbolo = (i + 1) * fator_oversampling
+        amostras_simbolo = sinal_recebido[inicio_simbolo:fim_simbolo]
+
+        # Integra o sinal recebido ao longo de cada período de símbolo
+        energia_simbolo = np.sum(amostras_simbolo)
+
+        # Compara a energia do símbolo ao limiar para tomar uma decisão
+        if energia_simbolo > limiar:
+            dados_demodulados[i] = 1
+        else:
+            dados_demodulados[i] = 0
+
+    return dados_demodulados.astype(int)
+
+# Exemplo de uso:
+if __name__ == "__main__":
+    # Parâmetros
+    taxa_simbolos = 1000  # 1000 símbolos por segundo
+    fator_oversampling = 10  # Fator de oversampling
+    amplitude = 1.0  # Amplitude do sinal
+    limiar = 0  # Limiar de decisão
+
+    # Gera uma sequência de dados binários aleatória
+    sequencia_dados = np.random.randint(2, size=10)
+
+    # Cria o sinal 4-PAM
+    t, sinal_4pam = criar_sinal_4pam(sequencia_dados, taxa_simbolos, fator_oversampling, amplitude)
+
+    # Simula um canal ruidoso (aqui, apenas adicionamos ruído gaussiano ao sinal)
+    sinal_ruidoso = sinal_4pam + np.random.normal(0, 0.5, len(sinal_4pam))
+
+    # Demodula o sinal recebido
+    dados_demodulados = demodular_sinal_4pam(sinal_ruidoso, taxa_simbolos, fator_oversampling, limiar)
+
+    # Plota o sinal original, sinal recebido (com ruído) e os dados demodulados
+    plt.figure(figsize=(10, 6))
+    plt.subplot(311)
+    plt.plot(t, sinal_4pam)
+    plt.title('Sinal 4-PAM Original')
+    plt.subplot(312)
+    plt.plot(t, sinal_ruidoso)
+    plt.title('Sinal Recebido (com Ruído)')
+    plt.subplot(313)
+    plt.stem(np.arange(len(sequencia_dados)), dados_demodulados)
+    plt.title('Dados Demodulados')
+    plt.tight_layout()
+    plt.show()
